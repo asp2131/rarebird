@@ -1,0 +1,20 @@
+{
+  "name": "rarebird-svelte",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
+    "playwright": "^1.60.0",
+    "svelte": "^5.55.5",
+    "vite": "^8.0.12"
+  },
+  "dependencies": {
+    "gsap": "^3.15.0"
+  }
+}
