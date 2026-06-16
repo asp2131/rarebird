@@ -187,19 +187,22 @@
 
             <div class="team-row" data-reveal-group>
               <div class="team-card" data-reveal>
-                <ImageSlot id="team-1" shape="circle" src="/theo.jpg" placeholder="Taylor Triplett" />
+                <ImageSlot id="team-1" shape="rect" src="/theo.jpg" placeholder="Taylor Triplett" />
                 <p class="team-name">Taylor &ldquo;Theo&rdquo; Triplett</p>
                 <p class="team-role">Executive Director</p>
+                <p class="team-bio">Taylor &ldquo;Theo&rdquo; Triplett is an educator native to New Orleans and passionate about the unique talents of neurodivergency. The child of two public school teachers, Theo began working with special-needs students as a teen and now has nearly 15 years of experience working with differently abled children both in and out of the classroom. He graduated Magna Cum Laude from Spelman University with a degree in English before starting his teaching career at historical school sites around the city. He went on to achieve a teaching certification and a Master&rsquo;s degree in Education with distinction from Loyola University. Years of working in Special Education have reaffirmed his belief that each child has a unique talent and skillset that traditional education often lacks the ability to cultivate, despite teachers&rsquo; best efforts. Rare Bird is designed to bridge the gap between families, teachers, and the resources they need to succeed.</p>
               </div>
               <div class="team-card" data-reveal>
-                <ImageSlot id="team-2" shape="circle" src="/lisa.jpg" placeholder="Lisa Brown" />
+                <ImageSlot id="team-2" shape="rect" src="/lisa.jpg" placeholder="Lisa Brown" />
                 <p class="team-name">Lisa Brown</p>
                 <p class="team-role">Clinical Coordinator</p>
+                <p class="team-bio">Lisa Brown is a 6th-year doctoral candidate (post-dissertation proposal) at Purdue University, specializing in clinical neurophysiology, set to graduate in 2026. Prior to pursuing their PhD, Lisa graduated Magna Cum Laude from Spelman College in 2020 with a Bachelor of Arts in psychology, and later graduated from Purdue University with a Master of Science degree in clinical psychology. Lisa has dedicated their career thus far to the clinical support of marginalized populations with severe symptomology. Throughout the years, they have worked with children with a large variety of diagnoses, completing over 2,000 hours of direct clinical experience across over 10 clinical and educational environments with individuals as young as 2 years old. This experience has reaffirmed their love of working with neurodiverse children and making clinical and educational resources available to all children.</p>
               </div>
               <div class="team-card" data-reveal>
-                <ImageSlot id="team-3" shape="circle" src="/gabby.png" placeholder="Gabriella Stewart" />
+                <ImageSlot id="team-3" shape="rect" src="/gabby.png" placeholder="Gabriella Stewart" />
                 <p class="team-name">Gabriella Stewart</p>
                 <p class="team-role">Director of Programs</p>
+                <p class="team-bio">Gabriella Stewart has been working with neurodivergent children for over a decade. Starting with the connection of having three autistic brothers, Gabriella has turned her personal passion into a career path of helping special needs children thrive. Combining Art Therapy, Social Emotional Learning (SEL), and real-world life skills with personalized education goals, she is committed to helping every child become the best version of themselves.</p>
               </div>
             </div>
           </div>
@@ -212,7 +215,7 @@
               <span class="eyebrow" data-reveal>Get started</span>
               <h2 data-split>Let's make room for every rare bird.</h2>
               <p data-reveal>Whether you lead a school, love a child, or want to support the work — we'd love to hear from you.</p>
-              <a class="contact-email" href="mailto:hello@rarebird.org" data-reveal>hello@rarebird.org</a>
+              <a class="contact-email" href="mailto:info@rarebirdlearn.com" data-reveal>info@rarebirdlearn.com</a>
             </div>
             <form class="contact-form" data-reveal on:submit|preventDefault>
               <div class="field">
