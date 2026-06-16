@@ -4,7 +4,7 @@ Static Svelte + Vite site, served by nginx in Docker, fronted by Caddy (TLS + re
 
 ## Production deployment
 
-- **Host:** `judge0` VM, repo cloned at `~/rarebird` (this repo).
+- **Host:** DigitalOcean droplet / `judge0` VM, repo cloned at `/rarebird` (this repo).
 - **Reverse proxy:** a separate `caddy:alpine` container owns ports **80 + 443** and terminates TLS.
   Its Caddyfile proxies the domain to the app container **by name** over a shared Docker network:
   ```
@@ -14,13 +14,73 @@ Static Svelte + Vite site, served by nginx in Docker, fronted by Caddy (TLS + re
   ```
 - **App container:** built from this repo's `Dockerfile` (multi-stage: `npm run build` → nginx serving `dist/`).
 
-### Deploy / update
+### Automated deploys from GitHub Actions
 
-Run on the VM after pushing changes:
+Pushing to `main` now runs `.github/workflows/deploy.yml`. The workflow:
+
+1. verifies the site builds with `npm ci && npm run build`,
+2. SSHes into the VM,
+3. updates the repo at `/rarebird` (or `DEPLOY_PATH`, if set),
+4. rebuilds/restarts the `rarebird` Docker container on the `web` network, and
+5. checks both Docker health and `https://rarebirdlearn.com`.
+
+Required one-time GitHub setup: in **GitHub → repo → Settings → Secrets and variables → Actions**, add these **Secrets**:
+
+| Secret | Value |
+|---|---|
+| `SSH_HOST` | VM hostname or IP |
+| `SSH_USER` | VM user that can `cd /rarebird`, pull the repo, and run Docker |
+| `SSH_PRIVATE_KEY` | Private key for that VM user/deploy key. Install the matching public key in `SSH_USER`'s `~/.ssh/authorized_keys` on the VM. |
+| `SSH_KNOWN_HOSTS` | Output of `ssh-keyscan -H <SSH_HOST>` for the same host value used in `SSH_HOST`. |
+
+Optional **Secret**:
+
+| Secret | Default | Purpose |
+|---|---|---|
+| `SSH_PORT` | `22` | SSH port for the DigitalOcean droplet, if not using the default |
+
+One-time SSH key setup example:
 
 ```bash
-cd ~/rarebird
-git pull
+# On your machine; do not commit these files
+ssh-keygen -t ed25519 -C "github-actions-rarebird" -f ./rarebird_actions -N ""
+ssh-copy-id -i ./rarebird_actions.pub <SSH_USER>@<SSH_HOST>
+
+# Put this in GitHub secret SSH_PRIVATE_KEY
+cat ./rarebird_actions
+
+# Put this in GitHub secret SSH_KNOWN_HOSTS
+ssh-keyscan -H <SSH_HOST>
+```
+
+Optional **Variables**:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DEPLOY_PATH` | `/rarebird` | Absolute path to the checked-out repo on the VM |
+| `SITE_URL` | `https://rarebirdlearn.com` | URL checked after deploy |
+
+VM prerequisites:
+
+- repo already cloned at `/rarebird` on the VM and able to `git fetch origin main`,
+- `SSH_USER` can authenticate with the deploy key and run Docker without an interactive password,
+- `docker` installed and usable by `SSH_USER`,
+- Docker network `web` exists and is shared with Caddy,
+- Caddy is already proxying `rarebirdlearn.com` to `rarebird:80`,
+- swap is configured on 1GB VMs (see gotchas below).
+
+The workflow updates the VM checkout with `git reset --hard origin/main`, so don't make uncommitted production edits directly on the VM.
+
+To deploy manually from GitHub, use **Actions → Deploy production → Run workflow**.
+
+### Manual deploy / update
+
+Usually you should just push to `main`. If GitHub Actions is unavailable, run the same remote deploy sequence on the VM after pushing changes:
+
+```bash
+cd /rarebird
+git fetch origin main
+git reset --hard origin/main
 docker build -t rarebird .
 docker rm -f rarebird
 docker run -d --name rarebird --network web --restart unless-stopped rarebird

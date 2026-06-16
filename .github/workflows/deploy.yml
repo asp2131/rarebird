@@ -1,0 +1,152 @@
+name: Deploy production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to VM
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      # Optional repository variable. If empty, the remote script uses /rarebird.
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      SITE_URL: ${{ vars.SITE_URL || 'https://rarebirdlearn.com' }}
+      SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Verify production build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          : "${SSH_PRIVATE_KEY:?Set the SSH_PRIVATE_KEY repository secret}"
+          : "${SSH_KNOWN_HOSTS:?Set the SSH_KNOWN_HOSTS repository secret}"
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy over SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          set -euo pipefail
+          : "${SSH_HOST:?Set the SSH_HOST repository secret}"
+          : "${SSH_USER:?Set the SSH_USER repository secret}"
+
+          remote_deploy_path=${DEPLOY_PATH:-}
+          ssh -i ~/.ssh/deploy_key \
+            -p "$SSH_PORT" \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" \
+            "DEPLOY_PATH=$(printf '%q' "$remote_deploy_path") bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          if [ -z "${DEPLOY_PATH:-}" ]; then
+            DEPLOY_PATH="/rarebird"
+          fi
+
+          wait_for_healthy() {
+            for attempt in $(seq 1 18); do
+              status=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' rarebird 2>/dev/null || true)
+              echo "rarebird status: ${status:-unknown}"
+
+              case "$status" in
+                healthy)
+                  docker ps --filter 'name=^/rarebird$' --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'
+                  return 0
+                  ;;
+                unhealthy|exited|dead|restarting)
+                  return 1
+                  ;;
+              esac
+
+              sleep 5
+            done
+
+            return 1
+          }
+
+          cd "$DEPLOY_PATH"
+          git fetch --prune origin main
+          git reset --hard origin/main
+          git clean -fd
+
+          docker network inspect web >/dev/null
+
+          short_sha=$(git rev-parse --short=12 HEAD)
+          new_image="rarebird:${short_sha}"
+
+          docker build -t "$new_image" .
+          docker run --rm --entrypoint nginx "$new_image" -t
+
+          previous_image="rarebird:previous"
+          if docker image inspect rarebird:latest >/dev/null 2>&1; then
+            docker tag rarebird:latest "$previous_image"
+            have_previous=1
+          else
+            have_previous=0
+          fi
+
+          docker rm -f rarebird || true
+          docker run -d --name rarebird --network web --restart unless-stopped "$new_image"
+
+          if wait_for_healthy; then
+            docker tag "$new_image" rarebird:latest
+            exit 0
+          fi
+
+          docker logs --tail 80 rarebird || true
+          echo "rarebird did not become healthy; attempting rollback"
+          docker rm -f rarebird || true
+
+          if [ "$have_previous" = "1" ]; then
+            docker tag "$previous_image" rarebird:latest
+            docker run -d --name rarebird --network web --restart unless-stopped "$previous_image"
+            if wait_for_healthy; then
+              echo "rollback succeeded"
+            else
+              docker logs --tail 80 rarebird || true
+              echo "rollback container did not become healthy"
+            fi
+          else
+            echo "no previous rarebird image available for rollback"
+          fi
+
+          exit 1
+          REMOTE
+
+      - name: Verify public site
+        run: curl -fsSI --retry 5 --retry-delay 3 --retry-all-errors "$SITE_URL"
