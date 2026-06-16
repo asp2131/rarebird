@@ -1,3 +1,65 @@
+# Rare Bird — rarebirdlearn.com
+
+Static Svelte + Vite site, served by nginx in Docker, fronted by Caddy (TLS + reverse proxy) on the VM.
+
+## Production deployment
+
+- **Host:** `judge0` VM, repo cloned at `~/rarebird` (this repo).
+- **Reverse proxy:** a separate `caddy:alpine` container owns ports **80 + 443** and terminates TLS.
+  Its Caddyfile proxies the domain to the app container **by name** over a shared Docker network:
+  ```
+  rarebirdlearn.com, www.rarebirdlearn.com {
+      reverse_proxy rarebird:80
+  }
+  ```
+- **App container:** built from this repo's `Dockerfile` (multi-stage: `npm run build` → nginx serving `dist/`).
+
+### Deploy / update
+
+Run on the VM after pushing changes:
+
+```bash
+cd ~/rarebird
+git pull
+docker build -t rarebird .
+docker rm -f rarebird
+docker run -d --name rarebird --network web --restart unless-stopped rarebird
+docker ps                          # rarebird → Up (healthy), NOT Restarting
+curl -I https://rarebirdlearn.com  # expect HTTP/2 200
+```
+
+### Critical gotchas (these took the site down once — don't repeat)
+
+1. **Do NOT publish a port on the app container.** No `-p 80:80`. Caddy owns 80/443; the app is
+   reached internally as `rarebird:80`. Adding `-p 80:80` fails with
+   `Bind for 0.0.0.0:80 failed: port is already allocated`.
+2. **App container MUST join the `web` Docker network** (`--network web`) so Caddy can resolve the
+   `rarebird` hostname. Off the network → Caddy returns **502** (`bad address 'rarebird'`).
+3. **`nginx.conf` must be valid.** It's baked into the image and only parsed at container start, so a
+   bad config builds fine then crash-loops (`Restarting (1)`, Caddy 502). Verify after build:
+   ```bash
+   docker run --rm --entrypoint cat rarebird /etc/nginx/conf.d/default.conf | tail -3   # ends with one }
+   docker logs --tail 10 rarebird                                                        # no [emerg]
+   ```
+4. **The VM has 1GB RAM — swap is required.** Without swap, `vite build` OOM-stalls (`free -m` showed
+   ~27MB free). A 2GB swapfile is configured persistently in `/etc/fstab`. If rebuilding on a fresh box:
+   ```bash
+   fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+   echo '/swapfile none swap sw 0 0' >> /etc/fstab
+   ```
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `port is already allocated` | `-p 80:80` collides with Caddy | drop `-p`, use `--network web` |
+| Caddy returns 502 | app down or off `web` net | `docker ps` (Up?), `docker inspect rarebird` (on web?) |
+| `Restarting (1)` loop | bad `nginx.conf` | `docker logs rarebird` → fix config → rebuild |
+| `vite build` hangs | OOM, no swap | add swap (see above) |
+| stale config after edit | Docker layer cache | `docker build --no-cache -t rarebird .` |
+
+---
+
 # Svelte + Vite
 
 This template should help get you started developing with Svelte in Vite.
