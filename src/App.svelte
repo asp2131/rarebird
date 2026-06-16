@@ -29,11 +29,7 @@
   <header class="site-header">
     <div class="container">
       <a class="logo" href="#top">
-        <svg class="logo-mark" width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
-          <circle class="mk-a" cx="13" cy="17" r="10"></circle>
-          <circle class="mk-b" cx="23" cy="13" r="6"></circle>
-          <circle class="mk-c" cx="25" cy="25" r="4"></circle>
-        </svg>
+        <img class="logo-mark" src="/logo.svg" width="34" height="34" alt="Rare Bird" />
         <span class="logo-word">Rare Bird</span>
       </a>
       <nav class="site-nav">
@@ -65,7 +61,7 @@
               <div class="shape shape-half" data-speed="0.92"></div>
               <div class="arch-wrap">
                 <div class="arch-clip">
-                  <ImageSlot id="hero-photo" shape="rect" placeholder="Drop a classroom photo" />
+                  <ImageSlot id="hero-photo" shape="rect" src="/hero.svg" fit="contain" placeholder="Rare Bird" />
                 </div>
               </div>
               <div class="shape shape-ring" data-speed="1.12"></div>
@@ -180,30 +176,30 @@
                 <div class="collage-shape"></div>
                 <div class="collage-arch" data-speed="0.95">
                   <div class="arch-clip">
-                    <ImageSlot id="story-photo-1" shape="rect" placeholder="Drop a photo — school or city" />
+                    <ImageSlot id="story-photo-1" shape="rect" src="/logo.svg" fit="contain" placeholder="Rare Bird" />
                   </div>
                 </div>
                 <div class="collage-circle" data-speed="1.08">
-                  <ImageSlot id="story-photo-2" shape="circle" placeholder="Drop a detail photo" />
+                  <ImageSlot id="story-photo-2" shape="circle" src="/favicon.svg" fit="contain" placeholder="Rare Bird" />
                 </div>
               </div>
             </div>
 
             <div class="team-row" data-reveal-group>
               <div class="team-card" data-reveal>
-                <ImageSlot id="team-1" shape="circle" placeholder="Drop a portrait" />
-                <p class="team-name placeholder">Add a name</p>
-                <p class="team-role">Founder &amp; Executive Director</p>
+                <ImageSlot id="team-1" shape="circle" src="/theo.jpg" placeholder="Taylor Triplett" />
+                <p class="team-name">Taylor &ldquo;Theo&rdquo; Triplett</p>
+                <p class="team-role">Executive Director</p>
               </div>
               <div class="team-card" data-reveal>
-                <ImageSlot id="team-2" shape="circle" placeholder="Drop a portrait" />
-                <p class="team-name placeholder">Add a name</p>
+                <ImageSlot id="team-2" shape="circle" src="/lisa.jpg" placeholder="Lisa Brown" />
+                <p class="team-name">Lisa Brown</p>
+                <p class="team-role">Clinical Coordinator</p>
+              </div>
+              <div class="team-card" data-reveal>
+                <ImageSlot id="team-3" shape="circle" src="/gabby.png" placeholder="Gabriella Stewart" />
+                <p class="team-name">Gabriella Stewart</p>
                 <p class="team-role">Director of Programs</p>
-              </div>
-              <div class="team-card" data-reveal>
-                <ImageSlot id="team-3" shape="circle" placeholder="Drop a portrait" />
-                <p class="team-name placeholder">Add a name</p>
-                <p class="team-role">School Partnerships</p>
               </div>
             </div>
           </div>

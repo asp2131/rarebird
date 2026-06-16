@@ -158,9 +158,6 @@ section { scroll-margin-top: 96px; }
   text-decoration: none;
 }
 .logo-mark { display: block; }
-.logo-mark .mk-a { fill: var(--accent); }
-.logo-mark .mk-b { fill: var(--amber); }
-.logo-mark .mk-c { fill: var(--green); }
 .logo-word {
   font-family: var(--font-display);
   font-size: 23px;
