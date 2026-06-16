@@ -57,12 +57,12 @@ Optional **Variables**:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `DEPLOY_PATH` | `/rarebird` | Absolute path to the checked-out repo on the VM |
+| `DEPLOY_PATH` | auto-detects `/rarebird`, `$HOME/rarebird`, then `/root/rarebird` | Absolute path to the checked-out repo on the VM |
 | `SITE_URL` | `https://rarebirdlearn.com` | URL checked after deploy |
 
 VM prerequisites:
 
-- repo already cloned at `/rarebird` on the VM and able to `git fetch origin main`,
+- repo already cloned on the VM (usually `/rarebird`, `$HOME/rarebird`, or `/root/rarebird`) and able to `git fetch origin main`,
 - `SSH_USER` can authenticate with the deploy key and run Docker without an interactive password,
 - `docker` installed and usable by `SSH_USER`,
 - Docker network `web` exists and is shared with Caddy,

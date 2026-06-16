@@ -51,9 +51,12 @@ jobs:
 
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          # Normalize possible CRLF line endings from copied secrets, then validate
+          # the key before trying to SSH so formatting errors fail clearly.
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null
+          printf '%s\n' "$SSH_KNOWN_HOSTS" | tr -d '\r' > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
       - name: Deploy over SSH
@@ -75,8 +78,21 @@ jobs:
           set -euo pipefail
 
           if [ -z "${DEPLOY_PATH:-}" ]; then
-            DEPLOY_PATH="/rarebird"
+            for candidate in /rarebird "$HOME/rarebird" /root/rarebird; do
+              if [ -d "$candidate/.git" ]; then
+                DEPLOY_PATH="$candidate"
+                break
+              fi
+            done
           fi
+
+          if [ -z "${DEPLOY_PATH:-}" ] || [ ! -d "$DEPLOY_PATH/.git" ]; then
+            echo "Could not find the deployed git repo. Set the DEPLOY_PATH repository variable to the repo path on the droplet."
+            echo "Checked: /rarebird, $HOME/rarebird, /root/rarebird"
+            exit 1
+          fi
+
+          echo "Deploying from $DEPLOY_PATH"
 
           wait_for_healthy() {
             for attempt in $(seq 1 18); do
